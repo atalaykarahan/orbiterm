@@ -1878,6 +1878,10 @@ ipcMain.on('term:end', (e) => {
   const found = chatOf(e);
   if (found) endTerminal(found[0]);
 });
+ipcMain.on('term:close', (e) => {
+  const found = chatOf(e);
+  if (found && found[1].win && !found[1].win.isDestroyed()) found[1].win.close();
+});
 // The strip's star: the AI session in this window in or out of the chats list's favourites, as its row's star does
 // (the Mac's toggleFavorite). Nothing to star in a plain terminal.
 ipcMain.on('term:favorite', (e) => {
