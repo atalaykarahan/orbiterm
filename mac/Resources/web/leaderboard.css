@@ -108,11 +108,14 @@
 .bd-champ.p1 .bd-cbadge { right: -0.6875rem; bottom: -0.5625rem; width: 2.375rem; height: 2.375rem; }
 .bd-cbadge .bdg-mini { display: block; width: 100%; height: 100%; margin: 0; }
 .bd-cbadge img, .bd-cbadge svg { width: 100%; height: 100%; }
+.bd-cav .bd-live { position: absolute; top: -0.1875rem; right: -0.1875rem; bottom: auto; z-index: 3; width: 0.8125rem; height: 0.8125rem; }
+.bd-champ.p1 .bd-cav .bd-live { top: -0.25rem; right: -0.25rem; width: 0.9375rem; height: 0.9375rem; }
 .bd-cname { display: flex; align-items: baseline; justify-content: center; gap: 0.3125rem; max-width: 100%; margin-top: 0.625rem; color: var(--hi); font-size: 0.9375rem; font-weight: 650; line-height: 1.3; letter-spacing: -0.005em; }
 .bd-cname b { overflow: hidden; font-weight: inherit; text-overflow: ellipsis; white-space: nowrap; }
 .bd-champ.p1 .bd-cname { font-size: 1.0625rem; }
 .bd-tag { flex: none; color: var(--txt3); font: 500 0.75rem var(--font-mono); font-style: normal; }
 .bd-clv { margin-top: 0.0625rem; color: rgb(var(--rc)); font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+.bd-clv .bd-cwhat { color: var(--txt3); font-weight: 500; }
 .bd-clv em { margin-left: 0.375rem; }
 .bd-cscore { margin-top: 0.3125rem; color: var(--hi); font: 750 1.125rem/1.2 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; white-space: nowrap; }
 .bd-cscore i, .bd-score i { margin-left: 0.25rem; color: var(--txt3); font: 600 0.6875rem var(--font-sans); letter-spacing: 0.04em; font-style: normal; }
