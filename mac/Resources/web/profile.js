@@ -356,22 +356,41 @@ window.Profile = (() => {
     }
     return themesCache;
   };
-  const themeStyle = (tokens) =>
-    Object.entries(tokens).map(([k, v]) => `${k}:${v}`).join(';') +
-    ';--panel:rgba(var(--panel-rgb),var(--glass-a));--line:rgba(var(--accent-rgb),0.32);--line-soft:rgba(var(--accent-rgb),0.13);color:var(--txt)';
+  const themeStyle = (tokens) => {
+    const arc = tokens['--accent-rgb'] ? `--rc:${tokens['--accent-rgb']};` : '';
+    return Object.entries(tokens).map(([k, v]) => `${k}:${v}`).join(';') +
+      `;${arc}--panel:rgba(var(--panel-rgb),var(--glass-a));--line:rgba(var(--accent-rgb),0.32);--line-soft:rgba(var(--accent-rgb),0.13);color:var(--txt)`;
+  };
 
   function applyOwnerTheme(themeId, isSelf) {
     const panel = document.querySelector('#profile-view .cv-me');
+    const host = document.querySelector('#profile-view .me-host');
     if (!panel) return;
-    if (isSelf || !themeId) {
+    const applyToRight = (accent) => {
+      if (!host || !accent) return;
+      host.style.setProperty('--rc', accent);
+      for (const el of host.querySelectorAll('.pv-tok, .pv-lock, .me-inv')) el.style.setProperty('--rc', accent);
+    };
+    if (isSelf) {
       panel.removeAttribute('style');
+      const myAccent = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim();
+      applyToRight(myAccent);
+      return;
+    }
+    if (!themeId) {
+      panel.removeAttribute('style');
+      const myAccent = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim();
+      applyToRight(myAccent);
       return;
     }
     const expectedId = currentId;
     themeList().then((list) => {
       if (!list || !list.themes || currentId !== expectedId || !currentId || currentId === 'me') return;
       const t = list.themes.find((x) => x.id === themeId) || list.themes[0];
-      if (t && t.tokens) panel.setAttribute('style', themeStyle(t.tokens));
+      if (t && t.tokens) {
+        panel.setAttribute('style', themeStyle(t.tokens));
+        applyToRight(t.tokens['--accent-rgb']);
+      }
     });
   }
 
@@ -478,10 +497,20 @@ window.Profile = (() => {
     const fire = !isSelf && isHidden ? 0 : (src.fire || 0);
     const nick = isFriend ? (prof?.nick ?? f?.nick ?? null) : null;
     const presence = isSelf ? (Social?.state()?.me?.status || 'offline') : (isFriend ? (prof?.presence || f?.presence || 'offline') : null);
-    const themeId = prof?.theme ?? seed?.theme ?? null;
+    const themeId = prof?.theme ?? seed?.theme ?? f?.theme ?? null;
+    let themeAccentRgb = null;
+    if (themesCache?.themes) {
+      const activeThemeId = isSelf ? (themesCache.chosen || 'atalay') : themeId;
+      const th = themesCache.themes.find((t) => t.id === activeThemeId);
+      if (th?.tokens?.['--accent-rgb']) themeAccentRgb = th.tokens['--accent-rgb'];
+    }
+    if (!themeAccentRgb && isSelf) {
+      themeAccentRgb = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || null;
+    }
+    const colorRc = themeAccentRgb || rc;
 
     host.classList.add('pv-body');
-    host.style.setProperty('--rc', rc);
+    host.style.setProperty('--rc', colorRc);
     host.classList.toggle('pv-visit', !isSelf);
     document.body.classList.toggle('pv-visiting', !isSelf);
     applyOwnerTheme(themeId, isSelf);
@@ -593,17 +622,17 @@ window.Profile = (() => {
       `${themeRow}${statusHTML}</section>`;
 
     const lockHTML = isFriend
-      ? `<section class="pv-lock" style="--rc:${rc}"><div class="pv-lock-art">${[40, 70, 55, 90, 30, 62, 48].map((h) => `<i style="height:${h}%"></i>`).join('')}${PV_ICONS.lock}</div>` +
+      ? `<section class="pv-lock" style="--rc:${colorRc}"><div class="pv-lock-art">${[40, 70, 55, 90, 30, 62, 48].map((h) => `<i style="height:${h}%"></i>`).join('')}${PV_ICONS.lock}</div>` +
         `<h2>${esc(name)} keeps their hours to themselves</h2><p>Their level, their place on the board and their badges still show.</p></section>`
-      : `<section class="pv-lock" style="--rc:${rc}"><div class="pv-lock-art">${[40, 70, 55, 90, 30, 62, 48].map((h) => `<i style="height:${h}%"></i>`).join('')}${PV_ICONS.lock}</div>` +
+      : `<section class="pv-lock" style="--rc:${colorRc}"><div class="pv-lock-art">${[40, 70, 55, 90, 30, 62, 48].map((h) => `<i style="height:${h}%"></i>`).join('')}${PV_ICONS.lock}</div>` +
         `<h2>Hours are for friends</h2><p>${esc(name)}'s days, weeks and AIs show to their friends. Their level, their place on the board and their badges are here for everyone.</p></section>`;
 
     const tokEntry = tokensCache.get(targetKey);
     const tokData = !isHidden ? tokEntry?.data : null;
     const tokSkel = !isHidden && !tokEntry
-      ? `<section class="pv-tok" style="--rc:${rc}"><h2>TOKENS</h2><div class="pf-stats">${Array.from({ length: 4 }, () => '<div><i class="bd-skel" style="display:block;width:4.5rem;height:.625rem;margin-bottom:.375rem"></i><i class="bd-skel" style="display:block;width:5.5rem;height:1.25rem"></i></div>').join('')}</div><div class="tk-ai"><i class="bd-skel" style="display:block;height:1.125rem;margin-bottom:.5rem"></i><i class="bd-skel" style="display:block;width:78%;height:.875rem"></i></div></section>`
+      ? `<section class="pv-tok" style="--rc:${colorRc}"><h2>TOKENS</h2><div class="pf-stats">${Array.from({ length: 4 }, () => '<div><i class="bd-skel" style="display:block;width:4.5rem;height:.625rem;margin-bottom:.375rem"></i><i class="bd-skel" style="display:block;width:5.5rem;height:1.25rem"></i></div>').join('')}</div><div class="tk-ai"><i class="bd-skel" style="display:block;height:1.125rem;margin-bottom:.5rem"></i><i class="bd-skel" style="display:block;width:78%;height:.875rem"></i></div></section>`
       : '';
-    const tokSection = !isHidden ? (tokensHTML(tokData, rc) || tokSkel) : '';
+    const tokSection = !isHidden ? (tokensHTML(tokData, colorRc) || tokSkel) : '';
     const howSection = isSelf ? howXPHTML(level, prof?.strip?.goal || 3) : '';
 
     if (metaEl) {
