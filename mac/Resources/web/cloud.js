@@ -2737,11 +2737,6 @@ window.Cloud = (() => {
   });
   // Your badges came in or changed: your card on Friends shows the one you display and how many you have.
   window.Badges?.on(() => shown === 'friends' && meCard());
-  // A double click on a friend (not on their buttons) opens the chat.
-  views.friends.addEventListener('dblclick', (e) => {
-    const row = e.target.closest('.mn-friends .mn-row');
-    if (row && !e.target.closest('button')) Social.openChat(row.dataset.id);
-  });
   views.friends.addEventListener('contextmenu', friendMenu);
   views.friends.addEventListener('mousedown', (e) => {
     if (!e.target.closest('.mn-ctx')) fq('.mn-ctx')?.remove();

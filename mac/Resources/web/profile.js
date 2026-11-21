@@ -379,8 +379,6 @@ window.Profile = (() => {
     }
     if (!themeId) {
       panel.removeAttribute('style');
-      const myAccent = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim();
-      applyToRight(myAccent);
       return;
     }
     const expectedId = currentId;
