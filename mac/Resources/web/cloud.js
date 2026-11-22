@@ -1180,8 +1180,8 @@ window.Cloud = (() => {
       const pic = f.avatar ? `<img alt="" src="${esc(f.avatar)}">` : `<b>${esc((f.nick || f.name || '?').trim().charAt(0).toUpperCase())}</b>`;
       const hover = f.nick ? `${f.name}${tag} · ` : '';
       return `<div class="mn-row fr-row${fire.cls}" data-id="${esc(f.id)}"${fire.tip}>` +
-        `${fire.canvas}<span class="fr-av st-${esc(f.presence || 'offline')}" style="--rc:${r.color}">${pic}${Social.dot(f.presence)}</span>` +
-        `<div class="mn-main" title="${esc(hover)}Click for their profile"><span class="lb-l1">${name}` +
+        `${fire.canvas}<span class="fr-av st-${esc(f.presence || 'offline')}" style="--rc:${r.color}" data-act="profile" title="View profile">${pic}${Social.dot(f.presence)}</span>` +
+        `<div class="mn-main" title="${esc(hover)}Click to chat"><span class="lb-l1">${name}` +
         `${window.Badges && f.badge ? window.Badges.small(f.badge, 24, f.id) : ''}${fire.mark}</span><small${f.last && f.unread ? ' class="fr-new"' : ''}>${line}</small></div>` +
         `${today}${f.unread ? `<i class="cnt hot">${f.unread}</i>` : ''}<span class="fr-btns"><button class="mn-btn" type="button" data-act="profile" title="Profile: level and hours">◎</button>` +
         '<button class="mn-btn" type="button" data-act="chat" title="Message (right-click for more)">✉</button></span></div>';
@@ -1216,13 +1216,13 @@ window.Cloud = (() => {
     );
   }
 
-  // A click on a friend opens their profile page; a double click opens the chat (openOnDouble).
+  // A click on a friend opens the chat; their profile is on the profile button.
   async function listAction(e) {
     const row = e.target.closest('.mn-row');
     if (!row) return;
     const id = row.dataset.id;
     const el = e.target.closest('[data-act]');
-    if (!el) return row.closest('.mn-friends') && openProfile({ id, from: 'friends', picEl: row.querySelector('.fr-av img, .fr-av') });
+    if (!el) return row.closest('.mn-friends') && Social.openChat(id);
     switch (el.dataset.act) {
       case 'chat':
         return Social.openChat(id);
@@ -1821,16 +1821,23 @@ window.Cloud = (() => {
     if (!u) return '<span></span>';
     const r = Xp.rank(u.level);
     const anon = !u.id;
-    const fire = isLiveWeek() && !tokens() && !anon ? fireTier(u.fire, place - 1) : 0;
+    const live = isLiveWeek();
+    const fire = live && !tokens() && !anon ? fireTier(u.fire, place - 1) : 0;
     const burn = fire && !reduced() ? `<canvas class="bd-fire" data-look="${fire === 2 ? 'blue' : 'orange'}" data-reach="20" aria-hidden="true"></canvas>` : '';
     const who = anon ? '<b>Anonymous</b>' : `<b>${esc(u.name)}</b><i class="bd-tag">${tagText(u.tag)}</i>`;
     const badge = window.Badges && u.badge ? `<span class="bd-cbadge">${window.Badges.small(u.badge, place === 1 ? 38 : 30, u.me ? null : u.id)}</span>` : '';
-    const label = `${place === 1 ? 'First' : place === 2 ? 'Second' : 'Third'}: ${esc(anon ? 'Anonymous' : u.name)}${u.me ? ', you' : ''}, level ${u.level} ${r.name}, ${scoreText(u)} ${unit()}${fire ? `. ${FIRE_TEXT[fire]}` : ''}${anon ? '' : '. Opens their profile'}`;
+    const active = tokens() ? null : weekActive(u);
+    const what = tokens()
+      ? (u.top ? `mostly ${esc(AI_NAMES[u.top.tool] || u.top.tool)} ${esc(u.top.model)}` : '')
+      : boardBy === 'all'
+        ? (u.active != null ? `${Xp.num(Math.round(u.active / 3600))}h in all` : '')
+        : (active != null ? `${Xp.dur(active)}` : '');
+    const label = `${place === 1 ? 'First' : place === 2 ? 'Second' : 'Third'}: ${esc(anon ? 'Anonymous' : u.name)}${u.me ? ', you' : ''}, level ${u.level} ${r.name}, ${scoreText(u)} ${unit()}${live && u.working ? ', working now' : ''}${fire ? `. ${FIRE_TEXT[fire]}` : ''}${anon ? '' : '. Opens their profile'}`;
     return (
       `<button type="button" class="bd-champ p${place}${u.me ? ' me' : ''}"${anon ? ' disabled' : ` data-open="${esc(u.id)}"`} style="--rc:${r.color}" aria-label="${label}">` +
       `${burn}<span class="bd-champ-top">${place === 1 ? BD_I.crown : ''}<span class="bd-cav">${bdAvatar(u)}${badge}</span>` +
       `<span class="bd-cname">${who}${u.friend ? BD_I.friend : ''}${flameMark(fire)}</span>` +
-      `<span class="bd-clv">Lv ${u.level} · ${esc(r.name)}${u.me ? '<em class="bd-you">YOU</em>' : ''}</span>` +
+      `<span class="bd-clv">Lv ${u.level} · ${esc(r.name)}${u.me ? '<em class="bd-you">YOU</em>' : ''}${what ? ` · <span class="bd-cwhat">${what}</span>` : ''}</span>` +
       `<span class="bd-cscore"><span${tokens() ? ` title="${Xp.num(u.tokens)} tokens"` : ''}>${scoreText(u)}</span><i>${unit().toUpperCase()}</i></span></span>` +
       `<span class="bd-podstep" aria-hidden="true">${place}</span></button>`
     );
@@ -2785,11 +2792,6 @@ window.Cloud = (() => {
   });
   // Your badges came in or changed: your card on Friends shows the one you display and how many you have.
   window.Badges?.on(() => shown === 'friends' && meCard());
-  // A double click on a friend (not on their buttons) opens the chat.
-  views.friends.addEventListener('dblclick', (e) => {
-    const row = e.target.closest('.mn-friends .mn-row');
-    if (row && !e.target.closest('button')) Social.openChat(row.dataset.id);
-  });
   views.friends.addEventListener('contextmenu', friendMenu);
   views.friends.addEventListener('mousedown', (e) => {
     if (!e.target.closest('.mn-ctx')) fq('.mn-ctx')?.remove();
