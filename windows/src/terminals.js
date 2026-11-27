@@ -8,6 +8,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { quoteFor } = require('./shellquote');
 const { openHost } = require('./sessionhost');
 
 let pty = null;
@@ -44,8 +45,8 @@ function which(name) {
   }
 }
 
-/** A shell-safe word: PowerShell's single quotes, or POSIX ones. */
-const quote = (s) => (WIN ? `'${String(s).replace(/'/g, "''")}'` : `'${String(s).replace(/'/g, `'\\''`)}'`);
+/** A shell-safe word: PowerShell's single quotes, or POSIX ones (shellquote.js). */
+const quote = (s) => quoteFor(s, WIN);
 
 /** One command line from a program and its arguments, quoted so Windows programs split it back into the same words. */
 const commandLine = (file, args) =>

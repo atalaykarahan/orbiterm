@@ -296,10 +296,11 @@
     } catch {}
     return true;
   });
-  // Paths as they'd be typed at the prompt: one with a space or a character a shell reads (& ( ) ; , $ and the like) in
-  // double quotes, which PowerShell, cmd and Claude's prompt all take; several apart, with a space after the last for
-  // what's typed next, as the Mac's pastePaths (iTerm2's) leaves one.
-  const quoted = (p) => (/[\s&()[\]{}^=;!'+,`$@#%]/.test(p) ? `"${p}"` : p);
+  // Paths as they'd be typed at the prompt: one holding anything the shell reads (a space, & ( ) ; , $ ` or a quote) in
+  // single quotes, which PowerShell reads as the characters themselves (double quotes would let $( ) in a file's name
+  // run as code); several apart, with a space after the last for what's typed next, as the Mac's pastePaths (iTerm2's)
+  // leaves one. The quoting itself is shellquote.js, the main process's own.
+  const quoted = (p) => ShellQuote.quotePath(p, window.__platform === 'win32');
   const pastePaths = (paths) => {
     const list = (Array.isArray(paths) ? paths : []).filter((p) => typeof p === 'string' && p);
     if (!list.length) return false;

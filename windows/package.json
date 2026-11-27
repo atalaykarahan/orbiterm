@@ -9,6 +9,7 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
+    "test": "node scripts/shellquote-test.js",
     "staging": "node scripts/staging.js",
     "rebuild": "electron-rebuild -f -w node-pty",
     "dist": "node scripts/release.js --build-only",
