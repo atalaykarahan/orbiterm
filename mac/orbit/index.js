@@ -1391,6 +1391,12 @@ function wireHit(ev, t) {
 
 function onEvent(ev) {
   const now = performance.now();
+  // Not drawn (the dashboard hidden, or the map out of the layout), only what outlasts the moment is kept: the wire a call
+  // lights. Bolts, ripples and floating texts would pile up unseen until the loop runs again to clear them.
+  if (!ACT.visible || !ACT.shown || document.hidden) {
+    if (ev.k === 'tool') wireHit(ev, now);
+    return;
+  }
   poke(1600); // a bolt's flight: up to 1.55 s
   const node = nodeOf(ev);
   switch (ev.k) {
@@ -2013,7 +2019,9 @@ function wake() {
 }
 function targetFps(now) {
   if (press || camAnim) return QUALITY.front.fps;
-  const fps = (ACT.focused && !ACT.covered) || now < ACT.until ? QUALITY.front.fps : QUALITY.behind.fps;
+  // Covered by a chat window the map can't be seen: an event doesn't bring it back to full speed (a drag or a camera
+  // flight still do, above).
+  const fps = !ACT.covered && (ACT.focused || now < ACT.until) ? QUALITY.front.fps : QUALITY.behind.fps;
   return ACT.saver ? Math.min(fps, QUALITY.saver.fps) : fps;
 }
 document.addEventListener('visibilitychange', wake);
