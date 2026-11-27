@@ -1,0 +1,108 @@
+/* ===== Deck view (deck.js): the dashboard as a longer page to scroll, with four panels of its own ===== */
+/* Its panels show only in it, and not in Source Control's or the activity bar's views (they keep the page's own grid). */
+.deck-only { display: none; }
+#app.deck:not(.git-mode, .cloud-mode) > .deck-only { display: flex; }
+
+/* A row each: the top bar; the session cards; the chats list, the map and the right column, together filling the first
+   screen; then burn.tape and tool.flow, the bottom row, tool.trace and the ticker. The page scrolls. The columns stay
+   the page's (and their dragged widths); their lines to drag, placed for a page that doesn't scroll, wait. The cards'
+   and tool.trace's rows are min-content, not auto: in a grid taller than the page an auto row takes a panel's min-height,
+   and .panel's is 0. */
+#app.deck:not(.git-mode, .cloud-mode) {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  grid-template-rows: auto min-content max(420px, calc(100vh - 214px)) 238px 300px min-content 22px;
+}
+body:has(#app.deck:not(.git-mode, .cloud-mode)) > .pl-gsash { display: none !important; }
+/* Every bottom-row panel hidden (layout.js): its row takes nothing. */
+#app.deck.no-bottom:not(.git-mode, .cloud-mode) { grid-template-rows: auto min-content max(420px, calc(100vh - 214px)) 238px 0 min-content 22px; }
+#app.deck:not(.git-mode, .cloud-mode) > .dk-agents { grid-row: 2; grid-column: 2 / -1; }
+#app.deck:not(.git-mode, .cloud-mode) #chats,
+#app.deck:not(.git-mode, .cloud-mode) #mapwrap,
+#app.deck:not(.git-mode, .cloud-mode) #right { grid-row: 3; }
+#app.deck:not(.git-mode, .cloud-mode) > .dk-burn { grid-row: 4; grid-column: 1 / 4; }
+#app.deck:not(.git-mode, .cloud-mode) > .dk-flow { grid-row: 4; grid-column: 4; }
+#app.deck:not(.git-mode, .cloud-mode) #bottom { grid-row: 5; grid-column: 1 / -1; }
+#app.deck:not(.git-mode, .cloud-mode) > .dk-trace { grid-row: 6; grid-column: 1 / -1; }
+#app.deck:not(.git-mode, .cloud-mode) #ticker { grid-row: 7; }
+/* Scrolled out of sight: the map draws nothing (orbit.js stops while #space has no size). */
+#app.deck.deck-mapoff #space { display: none; }
+.dk-panel.dk-off > header::after { animation-play-state: paused; }
+.dk-panel .dk-axis { display: flex; justify-content: space-between; color: var(--dim2); font-size: 0.8em; }
+
+/* agents.deck: a card per live session, side by side (more than fit: scroll sideways) */
+.dk-agents .body { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 320px); gap: 8px; min-height: 94px; padding: 6px 8px; overflow-x: auto; scrollbar-width: thin; }
+.dk-agents .body > .empty { grid-column: 1 / -1; }
+.dk-ag { position: relative; min-width: 0; padding: 5px 8px 5px 10px; border: 1px solid var(--line-soft); background: rgba(var(--panel-rgb), 0.5); cursor: pointer; transition: border-color 0.3s; }
+.dk-ag::before { content: ""; position: absolute; top: -1px; bottom: -1px; left: -1px; width: 2px; background: var(--c); }
+.dk-ag:hover { border-color: var(--c); }
+.dk-ag .l1 { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.dk-ag .nm { min-width: 0; overflow: hidden; color: var(--hi); white-space: nowrap; text-overflow: ellipsis; }
+.dk-ag .l2, .dk-ag .act { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.88em; }
+.dk-ag .l2 { color: var(--dim); }
+.dk-ag .act { height: 1.35em; }
+.dk-ag svg.spark { display: block; width: 100%; height: 18px; margin-top: 3px; }
+.dk-ag .ld { display: flex; align-items: center; gap: 6px; margin-top: 3px; color: var(--dim); font-size: 0.86em; }
+.dk-panel .bar { flex: 1; min-width: 20px; height: 4px; background: rgba(255, 255, 255, 0.06); }
+.dk-panel .bar > i { display: block; height: 100%; background: var(--accent); transition: width 0.6s ease; }
+.dk-ag .cost { color: var(--accent-soft); font-weight: 700; }
+
+/* burn.tape: the big number, the two charts, how the tokens split and by model */
+.dk-burn .body { display: grid; grid-template-columns: minmax(170px, 0.9fr) minmax(0, 2fr) minmax(210px, 1.1fr); grid-template-rows: minmax(0, 1fr); gap: 16px; padding: 8px 10px; }
+.dk-big { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.dk-big small, .dk-burn label { color: var(--dim); font-size: 0.86em; letter-spacing: 0.06em; }
+.dk-big > b { color: var(--hi); font-size: 2.5em; line-height: 1.05; text-shadow: 0 0 18px rgba(var(--accent-rgb), 0.45); }
+.dk-big > span { color: var(--accent-soft); font-size: 0.9em; }
+.dk-kv { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; margin-top: auto; color: var(--dim); font-size: 0.88em; }
+.dk-kv b { color: var(--txt); font-weight: 600; }
+.dk-charts { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.dk-ch { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.dk-ch label { display: flex; justify-content: space-between; }
+.dk-ch label b { color: var(--txt3); font-weight: 400; }
+.dk-ch svg { flex: 1; width: 100%; min-height: 0; border-bottom: 1px solid var(--line-soft); }
+.dk-split { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.dk-split .mixlegend { grid-template-columns: repeat(2, 1fr); margin: 0 0 4px; }
+.dk-mod { display: grid; grid-template-columns: minmax(0, 1fr) 30% auto; align-items: center; gap: 6px; font-size: 0.9em; }
+.dk-mod span { overflow: hidden; color: var(--txt3); white-space: nowrap; text-overflow: ellipsis; }
+.dk-mod span i { color: var(--dim); font-style: normal; }
+.dk-mod b { color: var(--accent-soft); font-weight: 600; }
+
+/* tool.flow: a row per kind of tool call */
+.dk-flow .body { display: flex; flex-direction: column; justify-content: space-around; padding: 4px 10px; }
+.dk-cat { display: grid; grid-template-columns: 74px minmax(0, 1fr) 40px 48px; align-items: center; gap: 8px; font-size: 0.9em; }
+.dk-cat .nm { display: flex; align-items: center; gap: 6px; color: var(--txt3); }
+.dk-cat .nm i { width: 7px; height: 7px; }
+.dk-cat svg { width: 100%; height: 14px; }
+.dk-cat b { color: var(--txt); font-weight: 600; text-align: right; }
+.dk-cat em { color: var(--dim2); font-style: normal; white-space: nowrap; }
+.dk-cat em.on { color: var(--accent); }
+
+/* tool.trace: a row per session over the last two minutes; a subagent's calls are the thin bars under its own */
+.dk-trace .body { display: flex; flex-direction: column; gap: 4px; padding: 6px 10px 2px; }
+.dk-trace > .dk-axis { padding: 0 78px 4px 158px; }
+.dk-lane { display: grid; grid-template-columns: 140px minmax(0, 1fr) 60px; align-items: center; gap: 8px; height: 18px; }
+.dk-lane .nm { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dk-lane .n { color: var(--dim); font-size: 0.88em; text-align: right; }
+.dk-lane .tr {
+  position: relative;
+  height: 16px;
+  border-bottom: 1px solid var(--line-soft);
+  background: linear-gradient(var(--line-soft) 0 0) 25% 0 / 1px 100% no-repeat, linear-gradient(var(--line-soft) 0 0) 50% 0 / 1px 100% no-repeat, linear-gradient(var(--line-soft) 0 0) 75% 0 / 1px 100% no-repeat;
+}
+.dk-lane .tr i { position: absolute; top: 1px; height: 9px; border-radius: 1px; opacity: 0.9; }
+.dk-lane .tr i.sub { top: 11px; height: 4px; opacity: 0.6; }
+.dk-lane .tr i.run { opacity: 1; box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.7); }
+.dk-lane .tr i.bad { background: var(--red) !important; }
+
+/* One column (a narrow window): the page's own order, every part beside the activity bar's 48px column, as the page has it */
+@media (max-width: 920px) {
+  #app.deck:not(.git-mode, .cloud-mode) { grid-template-rows: auto; overflow-y: visible; }
+  #app.deck:not(.git-mode, .cloud-mode) > .deck-only,
+  #app.deck:not(.git-mode, .cloud-mode) #chats,
+  #app.deck:not(.git-mode, .cloud-mode) #mapwrap,
+  #app.deck:not(.git-mode, .cloud-mode) #right,
+  #app.deck:not(.git-mode, .cloud-mode) #bottom { grid-column: 2; grid-row: auto; }
+  #app.deck:not(.git-mode, .cloud-mode) #ticker { grid-column: 1 / -1; grid-row: auto; }
+  .dk-burn .body { grid-template-columns: 1fr; grid-template-rows: auto; }
+  .dk-burn .dk-ch svg { height: 60px; }
+}

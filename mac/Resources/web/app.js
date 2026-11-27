@@ -1238,6 +1238,7 @@ function renderAll() {
   const lc = clearedOf('p-log');
   setText($('m-log'), lc ? `live tool stream · ${since(lc)}` : 'live tool stream');
   setText($('m-map'), `${T.live} live · ${T.runningAgents} agents running · ${T.sessionsToday} sessions today`);
+  window.Deck?.render(STATE); // deck.js: nothing while Deck view is off
 }
 
 function renderTop() {
@@ -2061,6 +2062,7 @@ function renderTicker() {
 // orbit.js renders the centre of the dashboard; calls made before it has loaded are queued.
 const MAPQ = [];
 function map(fn, ...args) {
+  if (fn === 'event') window.Deck?.event(args[0]); // every event the map gets, real or party mode's: Deck view's tool.trace
   if (window.Orbit) window.Orbit[fn](...args);
   else MAPQ.push([fn, args]);
 }
@@ -2141,7 +2143,7 @@ $('log').addEventListener('click', (e) => {
 $('newchat').addEventListener('click', () => native({ type: 'newTerminal' }));
 
 // Shared with orbit.js.
-window.RADAR = { CAT, CATS, STATUS, FONT, MAPQ, sessColor, colorIndex, sessName, hexA, fmtTok, fmtUsd, fmtDur, clock, ago, clipT, esc, ctxColor, focusSession, sessionTip, agentTip, stationTip, terminalTip, openTerminal, showTip, hideTip };
+window.RADAR = { CAT, CATS, STATUS, FONT, MAPQ, sessColor, colorIndex, sessName, hexA, fmtTok, fmtUsd, fmtDur, clock, ago, clipT, esc, ctxColor, focusSession, sessionTip, agentTip, stationTip, terminalTip, openTerminal, showTip, hideTip, sessCss, ctxCss, setText, setHTML, keyed, placeholder, sparkBars, areaChart, actionHTML };
 
 // ---------- start ----------
 setInterval(() => {

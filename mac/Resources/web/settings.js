@@ -85,6 +85,10 @@ window.Settings = (() => {
 
     const appearance =
       group('colours', row('theme', 'the colours of the whole app', '<span class="st-val"><b class="st-theme-name">…</b><button type="button" class="st-btn st-theme">change…</button></span>')) +
+      // Deck view (deck.js): the dashboard as a longer page, with panels of its own; this page keeps it.
+      group('dashboard layout',
+        row('Deck view', 'A longer dashboard to scroll: a card per session over the map, then spend and token charts, the kinds of tool calls and a timeline of them. Off: the dashboard as it is',
+          sw('st-deck' + (window.Deck?.on() ? ' on' : ''), 'Deck view', !!window.Deck?.on()))) +
       // Viktoria has her own switch (any theme; the app keeps it, Mascot.swift). Mischief (mascot.js MISCHIEF table; the app
       // keeps the level) and the credits show only while she is on.
       group('mascot',
@@ -363,6 +367,13 @@ window.Settings = (() => {
       wtn.classList.toggle('on', on);
       wtn.setAttribute('aria-checked', String(on));
       window.webkit?.messageHandlers?.radar?.postMessage({ type: 'worktreeNudge', on });
+    };
+    const dk = page.querySelector('.st-deck');
+    if (dk) dk.onclick = () => {
+      const on = !window.Deck?.on();
+      window.Deck?.set(on);
+      dk.classList.toggle('on', on);
+      dk.setAttribute('aria-checked', String(on));
     };
     const snd = page.querySelector('.st-sound');
     if (snd) snd.onclick = () => {
