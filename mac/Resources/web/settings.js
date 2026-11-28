@@ -124,6 +124,12 @@ window.Settings = (() => {
             'when an AI starts in a folder where another one is working · a note in its window until you send it something',
             sw('st-wtnudge' + (window.__worktreeNudge !== false ? ' on' : ''), 'Suggest a worktree for a second AI', window.__worktreeNudge !== false)))
         : '') +
+      // Only where the app answers the switch (the Mac app sets window.__chatWindowsFree, ChatWindows.swift).
+      (typeof window.__chatWindowsFree === 'boolean'
+        ? group('windows', row('chat windows on their own',
+            'off: they stay above the dashboard and hide with it · on: ordinary windows, the dashboard can come in front of them, and Split View places them like any other',
+            sw('st-cwfree' + (window.__chatWindowsFree ? ' on' : ''), 'Chat windows on their own', window.__chatWindowsFree === true)))
+        : '') +
       (c.savers
         ? group('save tokens',
             row('shorter command output <em class="st-tag">rtk</em>', { cls: 'ts-note', attr: ' data-which="rtk"', text: '…' }, sw('ts', 'Turn rtk on or off', false, ' data-which="rtk"'), 'ts-row') +
@@ -363,6 +369,14 @@ window.Settings = (() => {
       wtn.classList.toggle('on', on);
       wtn.setAttribute('aria-checked', String(on));
       window.webkit?.messageHandlers?.radar?.postMessage({ type: 'worktreeNudge', on });
+    };
+    const cwf = page.querySelector('.st-cwfree');
+    if (cwf) cwf.onclick = () => {
+      const on = cwf.getAttribute('aria-checked') !== 'true';
+      window.__chatWindowsFree = on;
+      cwf.classList.toggle('on', on);
+      cwf.setAttribute('aria-checked', String(on));
+      window.webkit?.messageHandlers?.radar?.postMessage({ type: 'chatWindowsFree', on });
     };
     const snd = page.querySelector('.st-sound');
     if (snd) snd.onclick = () => {

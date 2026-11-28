@@ -416,6 +416,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         case "worktreeNudge":
             WorktreeNudge.enabled = (msg["on"] as? NSNumber)?.boolValue ?? true
             if !WorktreeNudge.enabled { for c in chats.values { c.hud.nudge = nil } }
+        case "chatWindowsFree":
+            ChatWindows.free = (msg["on"] as? NSNumber)?.boolValue ?? false
+            for c in chats.values { c.applyFree() }
         case "mascotEnabled":
             Mascot.isEnabled = (msg["on"] as? NSNumber)?.boolValue ?? false
         // Viktoria's download (Themes row, Settings > Appearance): get, stop, or remove her files.
@@ -999,6 +1002,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate {
         guard let data = try? JSONSerialization.data(withJSONObject: Cloud.shared.json), let js = String(data: data, encoding: .utf8) else { return }
         radar.push("cloud", js)
         radar.webView.evaluateJavaScript("window.__worktreeNudge = \(WorktreeNudge.enabled)", completionHandler: nil)
+        radar.webView.evaluateJavaScript("window.__chatWindowsFree = \(ChatWindows.free)", completionHandler: nil)
     }
 
     /// Another theme (the theme screen): the window's own background and the sidebar's divider; the page, the sidebar

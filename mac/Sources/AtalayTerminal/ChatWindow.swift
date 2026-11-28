@@ -26,7 +26,9 @@ final class ChatHUD: ObservableObject {
     /// The AI this chat starts, for "starting …": claude, codex or antigravity.
     var aiName = "claude"
     @Published var exited = false
-    @Published var attached = true
+    /// Rides on the dashboard as its child window. Off while pinned on top, and always off with Settings' "chat
+    /// windows on their own" (ChatWindows.free).
+    @Published var attached = !ChatWindows.free
     /// Above every app's windows (floating), like an always-on-top pin.
     @Published var onTop = false
     /// A second screen on a chat another build of the app runs: closing it leaves the chat running.
@@ -1018,7 +1020,9 @@ final class ChatWindowController: NSWindowController, NSWindowDelegate, LocalPro
         w.tabbingMode = .disallowed
         // Shows over a full-screen dashboard as its child (show). No .moveToActiveSpace: macOS doesn't count such a window
         // as the front one of its Space, so coming back to the desktop it brought the app behind it (Chrome) over it.
-        w.collectionBehavior = [.fullScreenAuxiliary, .participatesInCycle]
+        // On its own (ChatWindows.free) it is an ordinary window instead: Split View, Mission Control, the Dock and Move &
+        // Resize treat it as one.
+        w.collectionBehavior = ChatWindows.free ? ChatWindows.freeBehavior : [.fullScreenAuxiliary, .participatesInCycle]
         w.minSize = NSSize(width: 640, height: 420)
         w.isReleasedWhenClosed = false
         super.init(window: w)
@@ -1560,7 +1564,7 @@ final class ChatWindowController: NSWindowController, NSWindowDelegate, LocalPro
     func togglePin() {
         guard let w = window else { return }
         hud.onTop.toggle()
-        hud.attached = !hud.onTop
+        hud.attached = !hud.onTop && !ChatWindows.free
         if hud.onTop {
             w.parent?.removeChildWindow(w)
             // On every Space and over other apps' full-screen Spaces (a nonactivating panel), whatever the dashboard
@@ -1577,10 +1581,10 @@ final class ChatWindowController: NSWindowController, NSWindowDelegate, LocalPro
             w.styleMask.remove(.nonactivatingPanel)
             Self.preventActivation(w, false)
             w.level = .normal
-            w.collectionBehavior = [.fullScreenAuxiliary, .participatesInCycle]
+            w.collectionBehavior = ChatWindows.free ? ChatWindows.freeBehavior : [.fullScreenAuxiliary, .participatesInCycle]
             w.canHide = true
             // Only while the dashboard is on this Space: a child window drags its parent's Space along (as NoteWindow.attach).
-            if let parent = rideableDashboard(for: w) {
+            if hud.attached, let parent = rideableDashboard(for: w) {
                 parent.addChildWindow(w, ordered: .above)
             }
             // Unpinned while Orbiterm is in the background (the click hit a nonactivating panel): keys go to it from now on,
@@ -1602,6 +1606,23 @@ final class ChatWindowController: NSWindowController, NSWindowDelegate, LocalPro
         guard w.responds(to: sel) else { return }
         typealias F = @convention(c) (AnyObject, Selector, Bool) -> Void
         unsafeBitCast(w.method(for: sel), to: F.self)(w, sel, on)
+    }
+
+    /// Settings' "chat windows on their own" changed: an unpinned window lets go of the dashboard and becomes an
+    /// ordinary window, or rides on it again. A pinned one stays as it is; unpinned later, it follows the setting.
+    func applyFree() {
+        guard let w = window, !hud.onTop else { return }
+        hud.attached = !ChatWindows.free
+        if ChatWindows.free {
+            w.parent?.removeChildWindow(w)
+            w.collectionBehavior = ChatWindows.freeBehavior
+        } else {
+            w.collectionBehavior = [.fullScreenAuxiliary, .participatesInCycle]
+            if isShown, !steppedAside, !w.isMiniaturized, w.parent == nil, let parent = rideableDashboard(for: w) {
+                parent.addChildWindow(w, ordered: .above)
+            }
+        }
+        manager?.dashboardVisibilityChanged()
     }
 
     // MARK: tiling (Fn+Control+arrows, like macOS)
@@ -3174,10 +3195,11 @@ final class ChatWindowController: NSWindowController, NSWindowDelegate, LocalPro
     }
 
     /// The dashboard's menus (friends, settings, updates) open on the dashboard, under the windows pinned above it:
-    /// those step out of the way meanwhile. Always-on-top windows stay, and so do windows in the Dock: ordered out and
-    /// in again (stepBack), a minimized window came back out of the Dock when the menu closed.
+    /// those step out of the way meanwhile. Always-on-top windows stay, so do windows on their own (ChatWindows.free), and
+    /// so do windows in the Dock: ordered out and in again (stepBack), a minimized window came back out of the Dock when the
+    /// menu closed.
     func stepAside() {
-        guard let w = window, isShown, !hud.onTop, !steppedAside, !w.isMiniaturized else { return }
+        guard let w = window, isShown, hud.attached, !steppedAside, !w.isMiniaturized else { return }
         steppedAside = true
         w.parent?.removeChildWindow(w)
         w.orderOut(nil)
