@@ -243,6 +243,8 @@
         `<div class="btns"><button type="button" class="st-btn primary ac-go">Sign in with Claude…</button><button type="button" class="st-btn ac-no">cancel</button></div>${formError ? `<p class="ac-err" role="alert">${E(formError)}</p>` : ''}</div>`;
     } else {
       body += `<button type="button" class="hk-row st-row ac-add ac-open"><span class="st-l"><b>+ ${multi ? 'add account…' : 'add another account…'}</b><small>a second Claude subscription, like work and personal</small></span></button>`;
+      // A row's error (removing an account while one of its chats runs): there is no form for it to show in.
+      if (formError) body += `<p class="ac-err" role="alert">${E(formError)}</p>`;
     }
     return `<section class="st-group st-accts"><h3 class="st-h">claude accounts</h3><div class="st-box">${body}</div>` +
       '<p class="st-note">Each terminal uses one account: you pick it from the button next to the project’s name. Orbiterm never switches by itself when a limit runs out.</p></section>';
@@ -259,7 +261,7 @@
       }
       paint(el);
     };
-    el.querySelectorAll('.ac-open').forEach((b) => (b.onclick = () => ((formOpen = true), paint(el), el.querySelector('.ac-name')?.focus())));
+    el.querySelectorAll('.ac-open').forEach((b) => (b.onclick = () => ((formOpen = true), (formError = ''), paint(el), el.querySelector('.ac-name')?.focus())));
     q('.ac-no') && (q('.ac-no').onclick = () => ((formOpen = false), (formError = ''), paint(el)));
     q('.ac-go') && (q('.ac-go').onclick = async () => {
       const label = q('.ac-name').value.trim();
@@ -287,7 +289,7 @@
     });
     el.querySelectorAll('.ac-cancel').forEach((b) => (b.onclick = () => act({ type: 'cancelSignIn', id: b.dataset.id })));
     el.querySelectorAll('.ac-again').forEach((b) => (b.onclick = async () => (await act({ type: 'signIn', id: b.dataset.id }), poll(el))));
-    el.querySelectorAll('.ac-more').forEach((b) => (b.onclick = (e) => (e.stopPropagation(), moreMenu(el, b))));
+    el.querySelectorAll('.ac-more').forEach((b) => (b.onclick = (e) => (e.stopPropagation(), moreMenu(el, b, act))));
     if (q('.ac-rn')) {
       q('.ac-rn').focus();
       q('.ac-rn').select();
@@ -304,7 +306,8 @@
     }
   }
 
-  function moreMenu(el, btn) {
+  /** A row's ••• menu. `act` is bind's: it sends a request and paints the answer, or its error. */
+  function moreMenu(el, btn, act) {
     el.querySelector('.ac-menu')?.remove();
     const id = btn.dataset.id;
     const a = ACC.accounts.find((x) => x.id === id);
